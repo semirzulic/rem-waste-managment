@@ -71,9 +71,9 @@ jobs:
     
     - name: Verify services are responding
       run: |
-        echo "Testing API endpoint..."
+        echo "Testing API health endpoint..."
         for i in {1..30}; do
-          if curl -f http://localhost:3001/api/items 2>/dev/null; then
+          if curl -f http://localhost:3001/api/health 2>/dev/null; then
             echo "API is responding"
             break
           fi
