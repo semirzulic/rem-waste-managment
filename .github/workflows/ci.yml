@@ -29,28 +29,78 @@ jobs:
     - name: Install Playwright browsers
       run: npx playwright install --with-deps
     
-    - name: Kill any existing processes on ports
+    - name: Clean up ports
       run: |
-        sudo lsof -ti:3000 | xargs -r sudo kill -9 || true
-        sudo lsof -ti:3001 | xargs -r sudo kill -9 || true
-        sleep 2
+        sudo fuser -k 3000/tcp || true
+        sudo fuser -k 3001/tcp || true
+        sleep 3
     
-    - name: Start server in background
+    - name: Start server with debugging
       run: |
-        npm run server &
-        echo $! > server.pid
-        sleep 8
+        echo "Starting server..."
+        node server/server.js &
+        SERVER_PID=$!
+        echo $SERVER_PID > server.pid
+        echo "Server PID: $SERVER_PID"
+        sleep 10
+        
+        # Check if server is running
+        if ps -p $SERVER_PID > /dev/null; then
+          echo "Server process is running"
+        else
+          echo "Server process failed to start"
+          exit 1
+        fi
     
-    - name: Start Next.js in background  
+    - name: Start Next.js with debugging
       run: |
+        echo "Starting Next.js..."
         npm run dev &
-        echo $! > nextjs.pid
+        NEXTJS_PID=$!
+        echo $NEXTJS_PID > nextjs.pid
+        echo "Next.js PID: $NEXTJS_PID"
         sleep 15
+        
+        # Check if Next.js is running
+        if ps -p $NEXTJS_PID > /dev/null; then
+          echo "Next.js process is running"
+        else
+          echo "Next.js process failed to start"
+          exit 1
+        fi
     
-    - name: Wait for services to be ready
+    - name: Verify services are responding
       run: |
-        timeout 60 bash -c 'until curl -f http://localhost:3001/api/items 2>/dev/null; do echo "Waiting for API..."; sleep 2; done'
-        timeout 60 bash -c 'until curl -f http://localhost:3000 2>/dev/null; do echo "Waiting for frontend..."; sleep 2; done'
+        echo "Testing API endpoint..."
+        for i in {1..30}; do
+          if curl -f http://localhost:3001/api/items 2>/dev/null; then
+            echo "API is responding"
+            break
+          fi
+          echo "Attempt $i: API not ready, waiting..."
+          sleep 2
+          if [ $i -eq 30 ]; then
+            echo "API failed to respond after 60 seconds"
+            echo "Checking server logs..."
+            ps aux | grep node
+            netstat -tlnp | grep :3001 || true
+            exit 1
+          fi
+        done
+        
+        echo "Testing frontend..."
+        for i in {1..15}; do
+          if curl -f http://localhost:3000 2>/dev/null; then
+            echo "Frontend is responding"
+            break
+          fi
+          echo "Attempt $i: Frontend not ready, waiting..."
+          sleep 2
+          if [ $i -eq 15 ]; then
+            echo "Frontend failed to respond after 30 seconds"
+            exit 1
+          fi
+        done
     
     - name: Run API tests
       run: npx playwright test tests/api/ --reporter=list
@@ -61,10 +111,19 @@ jobs:
     - name: Cleanup processes
       if: always()
       run: |
-        if [ -f server.pid ]; then kill $(cat server.pid) || true; fi
-        if [ -f nextjs.pid ]; then kill $(cat nextjs.pid) || true; fi
-        sudo lsof -ti:3000 | xargs -r sudo kill -9 || true
-        sudo lsof -ti:3001 | xargs -r sudo kill -9 || true
+        echo "Cleaning up processes..."
+        if [ -f server.pid ]; then
+          SERVER_PID=$(cat server.pid)
+          kill $SERVER_PID || true
+          echo "Killed server PID: $SERVER_PID"
+        fi
+        if [ -f nextjs.pid ]; then
+          NEXTJS_PID=$(cat nextjs.pid)
+          kill $NEXTJS_PID || true
+          echo "Killed Next.js PID: $NEXTJS_PID"
+        fi
+        sudo fuser -k 3000/tcp || true
+        sudo fuser -k 3001/tcp || true
     
     - name: Upload test results
       uses: actions/upload-artifact@v4
