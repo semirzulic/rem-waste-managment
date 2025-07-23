@@ -26,24 +26,45 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Start server in background
-      run: |
-        npm run server &
-        sleep 5
-    
-    - name: Start Next.js in background
-      run: |
-        npm run dev &
-        sleep 10
-    
     - name: Install Playwright browsers
       run: npx playwright install --with-deps
     
+    - name: Kill any existing processes on ports
+      run: |
+        sudo lsof -ti:3000 | xargs -r sudo kill -9 || true
+        sudo lsof -ti:3001 | xargs -r sudo kill -9 || true
+        sleep 2
+    
+    - name: Start server in background
+      run: |
+        npm run server &
+        echo $! > server.pid
+        sleep 8
+    
+    - name: Start Next.js in background  
+      run: |
+        npm run dev &
+        echo $! > nextjs.pid
+        sleep 15
+    
+    - name: Wait for services to be ready
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:3001/api/items 2>/dev/null; do echo "Waiting for API..."; sleep 2; done'
+        timeout 60 bash -c 'until curl -f http://localhost:3000 2>/dev/null; do echo "Waiting for frontend..."; sleep 2; done'
+    
     - name: Run API tests
-      run: npx playwright test tests/api/
+      run: npx playwright test tests/api/ --reporter=list
     
     - name: Run E2E tests (excluding visual tests)
-      run: npx playwright test tests/e2e/ --ignore-snapshots
+      run: npx playwright test tests/e2e/ --ignore-snapshots --reporter=list
+    
+    - name: Cleanup processes
+      if: always()
+      run: |
+        if [ -f server.pid ]; then kill $(cat server.pid) || true; fi
+        if [ -f nextjs.pid ]; then kill $(cat nextjs.pid) || true; fi
+        sudo lsof -ti:3000 | xargs -r sudo kill -9 || true
+        sudo lsof -ti:3001 | xargs -r sudo kill -9 || true
     
     - name: Upload test results
       uses: actions/upload-artifact@v4

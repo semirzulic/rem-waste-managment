@@ -87,10 +87,10 @@ npm run test:all
 npm run test:api
 
 # UI/E2E tests only
-npm run test:e2e
+npm run test:ui
 
-# Visual regression tests
-npm run test:visual
+# Visual regression tests (run all tests to include visual)
+npm run test:all
 ```
 
 ### Test Coverage
@@ -175,12 +175,12 @@ The project includes a GitHub Actions workflow that:
 - Enhanced readability and test maintenance
 
 ### Test Categories
-1. **Unit Tests**: Individual component testing
-2. **Integration Tests**: API and database interactions
-3. **End-to-End Tests**: Complete user workflows
-4. **Visual Regression Tests**: UI consistency validation
-5. **Security Tests**: Authentication and authorization validation
-6. **Performance Tests**: Load and stress testing scenarios
+1. **API Tests**: Backend endpoint testing with authentication and CRUD operations
+2. **End-to-End Tests**: Complete user workflows from login to data manipulation
+3. **Integration Tests**: Frontend-backend data flow and authentication integration
+4. **Visual Regression Tests**: UI consistency validation with screenshot comparisons
+5. **Security Tests**: Authentication, authorization, and input validation testing
+6. **Performance Tests**: Concurrent request handling and response time validation
 
 ## 🐛 Troubleshooting
 

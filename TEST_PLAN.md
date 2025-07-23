@@ -27,7 +27,7 @@ This document outlines the comprehensive testing strategy for the REM Waste Mana
 
 ## Test Coverage Areas
 
-### Functional Testing (97.6% Success Rate)
+### Functional Testing (95.1% Success Rate)
 - **Login Scenarios**: 12 test cases covering valid/invalid credentials, session persistence
 - **CRUD Operations**: 25+ test cases for creating, editing, deleting waste items
 - **Form Validation**: Input validation for all data types (waste types, quantities, dates)
@@ -152,7 +152,7 @@ The GitHub Actions pipeline automatically runs all tests on:
 ## Success Metrics
 
 ### Current Achievement
-- **Overall Success Rate**: 97.6% tests passing
+- **Overall Success Rate**: 95.1% tests passing (579/609 tests)
 - **API Test Coverage**: 100% of endpoints with positive and negative test cases
 - **UI Test Coverage**: Complete user journey coverage from login to CRUD operations
 - **Security Test Coverage**: Authentication, authorization, and input validation testing
@@ -178,4 +178,4 @@ The GitHub Actions pipeline automatically runs all tests on:
 
 **Document Version**: 1.0  
 **Last Updated**: July 2025  
-**Author**: REM Waste Management Development Team
+**Author**: REM Waste Management - Semir Zulic
